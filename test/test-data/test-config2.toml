@@ -1,0 +1,10 @@
+[database]
+type = "postgresql"
+host = "another.example.com"
+port = 5432
+username = "admin"
+password = "not-so-secret"
+
+[moreconfig]  
+key1 = "value1"
+key2 = "value2"

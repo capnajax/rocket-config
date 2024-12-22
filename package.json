@@ -1,0 +1,36 @@
+{
+  "name": "rocket-config",
+  "version": "0.1.0",
+  "description": "Config manager for Node/Express apps.",
+  "main": "src/index.js",
+  "type": "module",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node_modules/.bin/mocha ./test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/capnajax/rocket-config.git"
+  },
+  "author": "Thomas D Wilkinson",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/capnajax/rocket-config/issues"
+  },
+  "homepage": "https://github.com/capnajax/rocket-config#readme",
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.10.2",
+    "mocha": "^11.0.1",
+    "test-battery": "^2.1.0",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "smob": "^1.5.0",
+    "toml": "^3.0.0",
+    "yaml": "^2.6.1"
+  }
+}

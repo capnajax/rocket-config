@@ -1,0 +1,38 @@
+server:
+  host: "localhost"
+  port: 8080
+  endpoints:
+    - path: "/api/v1/users"
+      method: "GET"
+      description: "Get all users"
+    - path: "/api/v1/users"
+      method: "POST"
+      description: "Create a new user"
+database:
+  type: "postgresql"
+  host: "db.example.com"
+  port: 5432
+  username: "admin"
+  password: "secret"
+  tables:
+    - name: "users"
+      columns:
+        - name: "id"
+          type: "integer"
+          primary_key: true
+        - name: "username"
+          type: "varchar"
+          length: 255
+        - name: "email"
+          type: "varchar"
+          length: 255
+    - name: "posts"
+      columns:
+        - name: "id"
+          type: "integer"
+          primary_key: true
+        - name: "title"
+          type: "varchar"
+          length: 255
+        - name: "content"
+          type: "text"
