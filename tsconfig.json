@@ -13,6 +13,7 @@
     "lib": ["es2022"],
     "module": "es2022",
     "moduleResolution": "node",
+    "outDir": "build",
     "pretty": false,
     "skipLibCheck": true,
     "strict": true,
@@ -20,7 +21,6 @@
   },
   "include": [
     "src/**/*.ts",
-    "test/**/*.ts",
     "test/00-config.js"
   ]
 }

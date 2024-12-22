@@ -1,9 +1,10 @@
 'use strict';
 
+import { sep } from 'node:path';
+
 import TestBattery from 'test-battery';
 
 import Config from '../build/index.js';
-import { sep } from 'node:path';
 
 const CONFIG_ROOT = 'test/test-data';
 function cf(name) {
