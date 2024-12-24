@@ -31,6 +31,17 @@ function get(obj:object, path:string, defaultValue:unknown = undefined)
   return result === undefined || result === obj ? defaultValue : result;
 };
 
+function deepFreeze(obj:object):void {
+  for (const value of Object.values(obj)) {
+    if (typeof value === 'object' && !Object.isFrozen(value)) {
+      deepFreeze(value);
+    }
+  }
+  if (!Object.isFrozen(obj)) {
+    Object.freeze(obj);
+  }
+}
+
 /**
  * Configuration class that loads configurations from files or objects and
  * merges them together. The configurations can be reloaded at any time, and
@@ -51,13 +62,37 @@ function get(obj:object, path:string, defaultValue:unknown = undefined)
  */
 class Config {
 
+  private static _globalConfig: Config|null = null;
+  static set globalConfig(config: Config) {
+    Config._globalConfig = config;
+  }
+  static async init(
+    defaultConfig:string|object = {},
+    ...sources:(string|object)[]
+  ): Promise<Config> {
+    Config._globalConfig = new Config(defaultConfig, ...sources);
+    await Config._globalConfig.loadConfigs();
+    return Config.c;
+  }
+  static get c(): Config {
+    if (!Config._globalConfig) {
+      throw new Error('Global configuration not set. Call initGlobalConfig() ' +
+        'first.');
+    }
+    if (!Config._globalConfig.isReady) {
+      throw new Error('Global configuration not loaded yet. Call ' +
+        'loadConfigs() and await its promised completion first.');
+    }
+    return Config._globalConfig;
+  }
+
   /**
    * Set to `false` until the configs are loaded. Remains `true` after that,
    * even if the configs are reloaded.
    */
   private ready = false;
   private loadConfigsPromise: Promise<void>|null = null;
-  mergedConfigs: object = {};
+  private mergedConfigs: object = {};
   private _sources: (object|string)[] = [];
 
   /**
@@ -80,6 +115,11 @@ class Config {
   get isReady(): boolean {
     return this.ready;
   }
+
+  get config(): object {
+    return this.mergedConfigs;
+  } 
+
   /**
    * Returns the sources of the configuration. The sources can be either
    * file paths or objects.
@@ -100,6 +140,7 @@ class Config {
    *  promise resolves immediately.
    */
   async addSource(...newSources:(string|object)[]): Promise<void> {
+
     this.sources.push(...newSources);
     if (this.ready) {
       await this.loadConfigs();
@@ -114,12 +155,16 @@ class Config {
    * @throws Error if the configuration is not loaded
    * @returns The value at the path or the default value
    */
-  get(path: string, defaultValue: unknown = undefined): unknown {
+  get(path: string|null, defaultValue: unknown = undefined): unknown {
     if (!this.ready) {
       throw new Error('Configuration not loaded yet. Call loadConfigs() and ' +
         'await its promised completion first.');
     }
-    return get(this.mergedConfigs, path, defaultValue);
+    if (!path) {
+      return this.mergedConfigs;
+    } else {
+      return get(this.mergedConfigs, path, defaultValue);
+    }
   }
 
   /**
@@ -128,6 +173,7 @@ class Config {
    * @returns 
    */
   private async loadFromFile(filePath: string): Promise<object> {
+
     const fileContent = (await fs.readFile(filePath)).toString();
 
     // checks the file extension to determine the parser. Supports YAML, JSON,
@@ -148,7 +194,23 @@ class Config {
       case 'js':
         // dynamically import the module and call the default export to get the
         // configuration object
-        parsedContent = (await import(filePath)).default;
+
+        parsedContent = (await import('data:text/javascript,' + fileContent)
+          .then((module) => {
+            if (typeof module.default === 'function') {
+              return module.default();
+            } else {
+              return module.default;
+            }
+          })
+          .catch((error) => {
+            console.error(
+              `Error loading JavaScript config module ${filePath}: ${error}`
+            );
+            return {};
+          })
+        );
+
         break;
       default:
         throw new Error(`Unsupported file extension: ${extension}`);
@@ -167,7 +229,7 @@ class Config {
       // guard to prevent multiple reloads at the same time
       return this.loadConfigsPromise;
     } else {
-      this.loadConfigsPromise = new Promise((resolve, reject) => {
+      this.loadConfigsPromise = new Promise<void>((resolve, reject) => {
         const loadingSources:(object|Promise<object>)[] = [];
         for (const source of this.sources) {
           if (typeof source === 'string') {
@@ -179,10 +241,13 @@ class Config {
         Promise.all(loadingSources)
         .then((resolvedSources) => {
           this.mergedConfigs = merge(...resolvedSources);
+          deepFreeze(this.mergedConfigs);
           this.ready = true;
           resolve();
         }).catch((reason) => {
           reject(reason);})
+        }).finally(() => {
+          this.loadConfigsPromise = null;
         });
       return this.loadConfigsPromise;
     }

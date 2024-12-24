@@ -1,6 +1,6 @@
 {
-  "name": "rocket-config",
-  "version": "0.1.0",
+  "name": "@rocketcode.dev/rocket-config",
+  "version": "1.1.0",
   "description": "Config manager for Node/Express apps.",
   "main": "src/index.js",
   "type": "module",
